@@ -1,0 +1,163 @@
+#load libraries
+import numpy as np
+import random as rnd
+import collections
+import matplotlib.pyplot as plt
+import time
+import scipy.stats as st
+
+from scipy.stats import bernoulli, binom, poisson, chi2
+from IPython.display import clear_output
+from operator import itemgetter
+from statsmodels.stats import proportion
+
+from numpy import matlib
+
+#Exercise1
+# Parameters
+n = 10  # Number of quanta
+p = 0.2  # Probability of release for each quantum
+
+# Calculate the binomial probabilities for all possible outcomes (0 to 10 quanta)
+outcomes = np.arange(0, n+1)
+probabilities = binom.pmf(outcomes, n, p)
+
+# Plot the probability mass function
+plt.bar(outcomes, probabilities)
+plt.title(f'Probability of 0 to {n} Quanta (p={p})')
+plt.xlabel('Number of quanta released')
+plt.ylabel('Probability')
+plt.xticks(outcomes)
+plt.show()
+
+# Print out the probabilities
+print("Probabilities for 0 to 10 quanta:")
+for k, prob in zip(outcomes, probabilities):
+    print(f"{k} quanta: {prob:.4f}")
+
+#Exercise 2
+# Parameters
+n = 14  # Total quanta available
+observed_k = 8  # Quanta released in the experiment
+release_probs = np.arange(0.1, 1.1, 0.1)  # Release probabilities from 0.1 to 1.0
+
+# Compute the likelihood for each release probability
+likelihoods = binom.pmf(observed_k, n, release_probs)
+
+# Print the likelihoods for each probability
+print(f"Likelihoods for {observed_k} Quanta Released:")
+for p, likelihood in zip(release_probs, likelihoods):
+    print(f"p = {p:.1f}: {likelihood:.6f}")
+
+# Plot the likelihood function
+plt.plot(release_probs, likelihoods, 'o-', color='b', markersize=8)
+plt.title(f'Likelihood of {observed_k} Quanta Released')
+plt.xlabel('Release Probability (p)')
+plt.ylabel('Likelihood')
+plt.grid(True)
+plt.show()
+
+# Find the release probability with the highest likelihood (maximum likelihood estimate)
+max_likelihood_prob = release_probs[np.argmax(likelihoods)]
+print(f"Most probable release probability: {max_likelihood_prob:.1f}")
+
+#Exercise3
+# Parameters
+n = 14  # Total quanta available
+observed_1 = 8  # Quanta released in the first measurement
+observed_2 = 5  # Quanta released in the second measurement
+release_probs = np.arange(0.1, 1.1, 0.1)  # Release probabilities from 0.1 to 1.0
+
+# Function to compute likelihood and log-likelihood
+def compute_likelihoods(obs1, obs2, n, probs):
+    likelihoods = binom.pmf(obs1, n, probs) * binom.pmf(obs2, n, probs)
+    log_likelihoods = np.log(likelihoods)
+    return likelihoods, log_likelihoods
+
+# Compute likelihoods and log-likelihoods
+likelihoods, log_likelihoods = compute_likelihoods(observed_1, observed_2, n, release_probs)
+
+# Print likelihood and log-likelihood for p=0.1
+p_test = 0.1
+likelihood_test = binom.pmf(observed_1, n, p_test) * binom.pmf(observed_2, n, p_test)
+log_likelihood_test = np.log(likelihood_test)
+print(f"Likelihood for p={p_test}: {likelihood_test:.6f}")
+print(f"Log-Likelihood for p={p_test}: {log_likelihood_test:.6f}")
+
+# Print likelihoods and log-likelihoods for all probabilities
+print("\nLikelihoods and Log-Likelihoods:")
+for p, l, log_l in zip(release_probs, likelihoods, log_likelihoods):
+    print(f"p={p:.1f}: Likelihood={l:.6f}, Log-Likelihood={log_l:.6f}")
+
+# Plot likelihood and log-likelihood functions
+plt.figure(figsize=(10, 5))
+
+# Likelihood plot
+plt.subplot(1, 2, 1)
+plt.plot(release_probs, likelihoods, 'o-', color='b')
+plt.title('Likelihood Function')
+plt.xlabel('Release Probability (p)')
+plt.ylabel('Likelihood')
+plt.grid(True)
+
+# Log-Likelihood plot
+plt.subplot(1, 2, 2)
+plt.plot(release_probs, log_likelihoods, 'o-', color='r')
+plt.title('Log-Likelihood Function')
+plt.xlabel('Release Probability (p)')
+plt.ylabel('Log-Likelihood')
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+
+# Maximum values
+max_likelihood_prob = release_probs[np.argmax(likelihoods)]
+max_log_likelihood = np.max(log_likelihoods)
+print(f"\nMax Likelihood: {np.max(likelihoods):.6f} (p={max_likelihood_prob:.1f})")
+print(f"Max Log-Likelihood: {max_log_likelihood:.6f}")
+
+#Exercise4
+# Experimental data
+counts = np.array([0, 0, 3, 7, 10, 19, 26, 16, 16, 5, 5, 0, 0, 0, 0])
+n = len(counts)  # Total number of experiments
+outcomes = np.arange(len(counts))  # Possible outcomes (0 to 14)
+
+# Define range of p values
+p_values = np.arange(0.01, 1.01, 0.01)
+
+# Calculate likelihoods
+likelihoods = np.zeros_like(p_values)
+for i, p in enumerate(p_values):
+    likelihood = np.prod(binom.pmf(outcomes, n, p) ** counts)
+    likelihoods[i] = likelihood
+
+# Find the value of p with the highest likelihood
+max_likelihood_index = np.argmax(likelihoods)
+max_likelihood_p = p_values[max_likelihood_index]
+max_likelihood_value = likelihoods[max_likelihood_index]
+
+# Print the results
+print(f"Most likely value of p (p-hat): {max_likelihood_p:.2f}")
+print(f"Maximum likelihood value: {max_likelihood_value:.6f}")
+
+# Plot the likelihood function
+plt.figure(figsize=(10, 6))
+plt.plot(p_values, likelihoods, 'b-', lw=2)
+plt.title('Likelihood Function for Different Values of p')
+plt.xlabel('Probability of Release (p)')
+plt.ylabel('Likelihood')
+plt.grid(True)
+plt.show()
+
+#Exercise5
+# Parameters for the binomial distribution
+n = 14  # Total quanta available
+p_null = 0.3  # Release probability under the null hypothesis
+observed_k = 7  # Quanta released in the experiment
+
+# Calculate the probability of observing exactly 7 quanta released
+probability = st.binom.pmf(observed_k, n, p_null)
+
+# Print the result with a shorter title
+print(f"Probability of observing {observed_k} quanta with p = {p_null}: {probability:.4f}")
