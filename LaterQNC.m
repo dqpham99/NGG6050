@@ -12,10 +12,23 @@ upperBounds = [1000 1000];
 % Initial values: use mean and standard deviation of the reciprocal of RTs
 initialValues = [mean(1 ./ RTs) * 1.5, std(1 ./ RTs)];  % [muR, deltaS]
 
-% Step 4: Run the Fits 
-opts = optimoptions(@fmincon, 'Algorithm', 'active-set', 'MaxIter', 3000, 'MaxFunEvals', 3000); 
-problem = createOptimProblem('fmincon', 'objective', laterErrFcn, 'x0', initialValues, ... 'lb', lowerBounds, 'ub', upperBounds, 'options', opts); 
+%% 4. Run the Fits 
+opts = optimoptions(@fmincon,    ... % "function minimization with constraints"
+   'Algorithm',   'active-set',  ...
+   'MaxIter',     3000,          ...
+   'MaxFunEvals', 3000);
+
+% Definine the "optimization problem" using variables defined above
+problem = createOptimProblem('fmincon',    ...
+    'objective',   laterErrFcn,     ... % Use the objective function
+    'x0',          initialValues,   ... % Initial conditions
+    'lb',          lowerBounds,     ... % Parameter lower bounds
+    'ub',          upperBounds,     ... % Parameter upper bounds
+    'options',     opts);                % Options defined above
+
+% Create a GlobalSearch object
 gs = GlobalSearch;
+   
 [fits, nllk] = run(gs, problem); % Optimize and get fitted parameters
 
 %%  5. Evaluate the fits
